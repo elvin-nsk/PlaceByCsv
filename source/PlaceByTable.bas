@@ -1,7 +1,7 @@
 Attribute VB_Name = "PlaceByTable"
 '===============================================================================
 '   Макрос          : PlaceByTable
-'   Версия          : 2022.12.22
+'   Версия          : 2022.12.27
 '   Сайты           : https://vk.com/elvin_macro
 '                     https://github.com/elvin-nsk
 '   Автор           : elvin-nsk (me@elvin.nsk.ru)
@@ -9,11 +9,18 @@ Attribute VB_Name = "PlaceByTable"
 
 Option Explicit
 
-Public Const RELEASE As Boolean = False
+Public Const RELEASE As Boolean = True
 
 Public Const APP_NAME As String = "PlaceByTable"
 
 '===============================================================================
+
+Private Type tTargetLayers
+    Layer1 As Layer
+    Layer2 As Layer
+    Layer3 As Layer
+    CropBoxLayer As Layer
+End Type
 
 Private Const ImportExt As String = "cdr"
 
@@ -31,20 +38,32 @@ Sub Start()
     
     Dim Imposition As Document
     Set Imposition = CreateDocument
+    Imposition.Unit = cdrMillimeter
+    
+    BoostStart APP_NAME, RELEASE
     
     Dim Groups As Collection
     Set Groups = ProcessTableAsGroups(Table, Cfg)
-    'Debug.Print Groups.Count
-    
-    
-    
-    
-    'BoostStart APP_NAME, RELEASE
-    
-    
+    ComposeGroupsAndReturnGroupsAsElements Groups, Cfg
+    ComposeGroups GroupsToElements(Groups), Cfg
+    Dim TargetLayers As tTargetLayers
+    With ActivePage
+        .Shapes.All.SetPositionEx _
+            cdrCenter, .CenterX, .CenterY
+        .SetSize .Shapes.All.SizeWidth + (Cfg.GroupsMinDistance * 2), _
+                 .Shapes.All.SizeHeight + (Cfg.GroupsMinDistance * 2)
+        ActiveLayer.Name = Cfg.DefaultLayerName
+        Set TargetLayers.Layer1 = .CreateLayer(Cfg.Layer1Name)
+        Set TargetLayers.Layer2 = .CreateLayer(Cfg.Layer2Name)
+        Set TargetLayers.Layer3 = .CreateLayer(Cfg.Layer3Name)
+        Set TargetLayers.CropBoxLayer = .CreateLayer(Cfg.LayerCropBoxName)
+        TargetLayers.CropBoxLayer.Color.CopyAssign _
+            CreateColor(Cfg.CropBoxOutlineColor)
+    End With
+    SpreadGroupsToLayers Groups, TargetLayers
     
 Finally:
-    'BoostFinish
+    BoostFinish
     Exit Sub
 
 Catch:
@@ -148,6 +167,10 @@ Private Function ProcessPlace( _
         .IsFront = Front
         .Name = Table(Tag)(Row)
         .Parse Cfg, Table
+        
+        ReplaceTextInTaggedShapes .ShapesByTags, Row, Table
+        TuneContentSize .Content, .CropBox, Cfg.ContentMaxSizeMultiplierToCropBox
+        
         Set ProcessPlace = .Self
     End With
     
@@ -162,7 +185,144 @@ Fail:
     Set TryImportShape = Either.SetLeft("Ошибка импорта файла " & File)
 End Function
 
+Private Sub ReplaceTextInTaggedShapes( _
+                ByVal ShapesByTags As Dictionary, _
+                ByVal Row As Long, _
+                ByVal Table As Dictionary _
+            )
+    Dim Tag As Variant
+    Dim Shape As Shape
+    For Each Tag In ShapesByTags.Keys
+        For Each Shape In ShapesByTags(Tag)
+            Shape.Text.Story.Text = _
+                VBA.Replace( _
+                    Shape.Text.Story.Text, Tag, _
+                    Table(Tag)(Row), 1, , vbTextCompare _
+                )
+        Next Shape
+    Next Tag
+End Sub
+
+Private Sub TuneContentSize( _
+                ByVal Content As ShapeRange, _
+                ByVal CropBox As Shape, _
+                ByVal Mult As Double _
+            )
+    Dim MaxWidth As Double
+    MaxWidth = CropBox.SizeWidth * Mult
+    Dim MaxHeight As Double
+    MaxHeight = CropBox.SizeHeight * Mult
+    If Content.SizeWidth > MaxWidth Then _
+        Content.SetSizeEx Content.CenterX, Content.CenterY, Width:=MaxWidth
+    If Content.SizeHeight > MaxHeight Then _
+        Content.SetSizeEx Content.CenterX, Content.CenterY, Height:=MaxHeight
+End Sub
+
 '-------------------------------------------------------------------------------
+
+Private Function ComposeGroupsAndReturnGroupsAsElements( _
+                     ByVal Groups As Collection, _
+                     ByVal Cfg As Config _
+                 ) As Collection
+    Set ComposeGroupsAndReturnGroupsAsElements = New Collection
+    Dim FrontShapes As ShapeRange
+    Dim BackShapes As ShapeRange
+    Dim Group As GroupTwoSides
+    For Each Group In Groups
+        ComposeSide Group.Fronts, Cfg
+        Set FrontShapes = GetShapesFromPlaces(Group.Fronts)
+        ComposeGroupsAndReturnGroupsAsElements.Add _
+            GetShapesFromPlaces(Group.Fronts)
+        
+        ComposeSide Group.Backs, Cfg
+        Set BackShapes = GetShapesFromPlaces(Group.Backs)
+        With BackShapes
+            .TopY = FrontShapes.TopY
+            .LeftX = FrontShapes.RightX + Cfg.SidesMinDistanceX
+        End With
+        ComposeGroupsAndReturnGroupsAsElements.Add _
+            GetShapesFromPlaces(Group.Backs)
+    Next Group
+End Function
+
+Private Sub ComposeSide( _
+                ByVal Side As Collection, _
+                ByVal Cfg As Config _
+            )
+    With Composer.CreateAndCompose( _
+             Elements:=Side, _
+             StartingPoint:=FreePoint.Create(0, 297), _
+             MaxPlacesInWidth:=Cfg.MaxPlacesPerSideX, _
+             MaxPlacesInHeight:=Cfg.MaxPlacesPerSideY, _
+             HorizontalSpace:=Cfg.PlacesMinDistanceX, _
+             VerticalSpace:=Cfg.PlacesMinDistanceY _
+         )
+    End With
+End Sub
+
+Private Function GetShapesFromPlaces(ByVal Places As Collection) As ShapeRange
+    Set GetShapesFromPlaces = CreateShapeRange
+    Dim Place As Place
+    For Each Place In Places
+        GetShapesFromPlaces.Add Place.Shape
+    Next Place
+End Function
+
+'-------------------------------------------------------------------------------
+
+Private Sub ComposeGroups( _
+                ByVal Elements As Collection, _
+                ByVal Cfg As Config _
+            )
+    With Composer.CreateAndCompose( _
+             Elements:=Elements, _
+             StartingPoint:=FreePoint.Create(0, 297), _
+             MaxPlacesInWidth:=VBA.Int(VBA.Sqr(Elements.Count)), _
+             HorizontalSpace:=Cfg.GroupsMinDistance, _
+             VerticalSpace:=Cfg.GroupsMinDistance _
+         )
+    End With
+End Sub
+
+Private Function GroupsToElements(ByVal Groups As Collection) As Collection
+    Set GroupsToElements = New Collection
+    Dim Shapes As ShapeRange
+    Dim Group As GroupTwoSides
+    For Each Group In Groups
+        Set Shapes = CreateShapeRange
+        Shapes.AddRange GetShapesFromPlaces(Group.Fronts)
+        Shapes.AddRange GetShapesFromPlaces(Group.Backs)
+        GroupsToElements.Add _
+            ComposerElement.Create(Shapes)
+    Next Group
+End Function
+
+'-------------------------------------------------------------------------------
+
+Private Sub SpreadGroupsToLayers( _
+                ByVal Groups As Collection, _
+                ByRef TargetLayers As tTargetLayers _
+            )
+    Dim Group As GroupTwoSides
+    For Each Group In Groups
+        SpreadPlacesToLayers Group.Fronts, TargetLayers
+        SpreadPlacesToLayers Group.Backs, TargetLayers
+    Next Group
+End Sub
+
+Private Sub SpreadPlacesToLayers( _
+                ByVal Places As Collection, _
+                ByRef TargetLayers As tTargetLayers _
+            )
+    Dim Place As Place
+    For Each Place In Places
+        Place.Shape.Ungroup
+        MoveToLayer Place.ToLayer1, TargetLayers.Layer1
+        MoveToLayer Place.ToLayer2, TargetLayers.Layer2
+        MoveToLayer Place.ToLayer3, TargetLayers.Layer3
+        MoveToLayer Place.ToCropBoxLayer, TargetLayers.CropBoxLayer
+    Next Place
+End Sub
 
 '===============================================================================
 ' # тесты

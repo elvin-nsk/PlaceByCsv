@@ -97,7 +97,7 @@ End Property
 '===============================================================================
 
 Private Property Get IComposerElement_Height() As Double
-    IComposerElement_Height = Shape.SizeHeight
+    IComposerElement_Height = CropBox.SizeHeight
 End Property
 
 Private Property Let IComposerElement_PivotX(ByVal RHS As Double)
@@ -124,5 +124,5 @@ Private Property Get IComposerElement_Shapes() As ShapeRange
 End Property
 
 Private Property Get IComposerElement_Width() As Double
-    IComposerElement_Width = Shape.SizeWidth
+    IComposerElement_Width = CropBox.SizeWidth
 End Property

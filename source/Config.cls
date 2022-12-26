@@ -15,7 +15,7 @@ Attribute VB_Exposed = False
 '@PredeclaredId
 Option Explicit
 
-#Const ReadOnly = False
+#Const ReadOnly = True
 #Const DefaultContent = False
 
 '===============================================================================
@@ -55,50 +55,30 @@ Private Sub Assign(ByVal Action As iniAction)
     
         iniFilePrepare .Self, Action
         
-        .KeyVar "BackTag", BackTag, _
-            "design_back"
+        .KeyVar "BackTag", BackTag
         .KeyVar "ContentMaxSizeMultiplierToCropBox", _
-            ContentMaxSizeMultiplierToCropBox, 0.75
+            ContentMaxSizeMultiplierToCropBox
         .KeyVar "ContentTagsCommaSeparated", _
-            ContentTagsCommaSeparated, "Name,tel1,tel2"
-        .KeyVar "CropBoxOutlineColor", CropBoxOutlineColor, _
-            "CMYK,USER,100,0,100,0"
-        .KeyVar "CsvFile", CsvFile, _
-            "e:\WORK\макросы Corel\на заказ\Евгений Галанов\PlaceByCsv\материалы\test\import.csv"
-        .KeyVar "CsvSeparator", CsvSeparator, _
-            ","
-        .KeyVar "DefaultLayerName", DefaultLayerName, _
-            "Элементы дизайна"
-        .KeyVar "FrontTag", FrontTag, _
-            "design_front"
-        .KeyVar "GroupsMinDistance", GroupsMinDistance, _
-            60
-        .KeyVar "Layer1Name", Layer1Name, _
-            "Имена"
-        .KeyVar "Layer1TagsCommaSeparated", Layer1TagsCommaSeparated, _
-            "Name"
-        .KeyVar "Layer2Name", Layer2Name, _
-            "Телефоны"
-        .KeyVar "Layer2TagsCommaSeparated", Layer2TagsCommaSeparated, _
-            "tel1,tel2"
-        .KeyVar "Layer3Name", Layer3Name, _
-            "Комментарии"
-        .KeyVar "Layer3TagsCommaSeparated", Layer3TagsCommaSeparated, _
-            "Color,Number,Comment"
-        .KeyVar "LayerCropBoxName", LayerCropBoxName, _
-            "Рамка"
-        .KeyVar "MaxPlacesPerSideX", MaxPlacesPerSideX, _
-            2
-        .KeyVar "MaxPlacesPerSideY", MaxPlacesPerSideY, _
-            4
-        .KeyVar "PlacesMinDistanceX", PlacesMinDistanceX, _
-            4
-        .KeyVar "PlacesMinDistanceY", PlacesMinDistanceY, _
-            1.6
-        .KeyVar "SidesMinDistanceX", SidesMinDistanceX, _
-            48
-        .KeyVar "SourceFolder", SourceFolder, _
-            "e:\WORK\макросы Corel\на заказ\Евгений Галанов\PlaceByCsv\материалы\test\"
+            ContentTagsCommaSeparated
+        .KeyVar "CropBoxOutlineColor", CropBoxOutlineColor
+        .KeyVar "CsvFile", CsvFile
+        .KeyVar "CsvSeparator", CsvSeparator
+        .KeyVar "DefaultLayerName", DefaultLayerName
+        .KeyVar "FrontTag", FrontTag
+        .KeyVar "GroupsMinDistance", GroupsMinDistance
+        .KeyVar "Layer1Name", Layer1Name
+        .KeyVar "Layer1TagsCommaSeparated", Layer1TagsCommaSeparated
+        .KeyVar "Layer2Name", Layer2Name
+        .KeyVar "Layer2TagsCommaSeparated", Layer2TagsCommaSeparated
+        .KeyVar "Layer3Name", Layer3Name
+        .KeyVar "Layer3TagsCommaSeparated", Layer3TagsCommaSeparated
+        .KeyVar "LayerCropBoxName", LayerCropBoxName
+        .KeyVar "MaxPlacesPerSideX", MaxPlacesPerSideX
+        .KeyVar "MaxPlacesPerSideY", MaxPlacesPerSideY
+        .KeyVar "PlacesMinDistanceX", PlacesMinDistanceX
+        .KeyVar "PlacesMinDistanceY", PlacesMinDistanceY
+        .KeyVar "SidesMinDistanceX", SidesMinDistanceX
+        .KeyVar "SourceFolder", SourceFolder
     
     End With
     

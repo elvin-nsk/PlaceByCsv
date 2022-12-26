@@ -101,7 +101,7 @@ Private Sub Compose()
     
     With This
     
-        Dim Item As ComposerElement
+        Dim Item As IComposerElement
         .CurrentRowNumber = 1
         For Each Item In .Elements
         

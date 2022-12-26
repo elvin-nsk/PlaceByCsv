@@ -1,7 +1,7 @@
 Attribute VB_Name = "lib_elvin"
 '===============================================================================
 '   Модуль          : lib_elvin
-'   Версия          : 2022.12.26
+'   Версия          : 2022.12.27
 '   Автор           : elvin-nsk (me@elvin.nsk.ru)
 '   Использован код : dizzy (из макроса CtC), Alex Vakulenko
 '                     и др.
@@ -686,14 +686,13 @@ Public Function ShapeRangeLayers(ByVal ShapeRange As ShapeRange) As Collection
 End Function
 
 'возвращает Rect, равный габаритам объекта плюс Space со всех сторон
-Public Function SpaceBox(ByVal ShapeOrRange As Object, Space#) As Rect
-    If Not TypeOf ShapeOrRange Is Shape _
-   And Not TypeOf ShapeOrRange Is ShapeRange Then
-        Err.Raise 13, Source:="SpaceBox", _
-                  Description:="Type mismatch: ShapeOrRange должен быть Shape или ShapeRange"
-        Exit Function
-    End If
-    Set SpaceBox = ShapeOrRange.BoundingBox.GetCopy
+Public Function SpaceBox( _
+                    ByVal MaybeShapeOrRange As Variant, _
+                    ByVal Space As Double _
+                ) As Rect
+    If VBA.IsEmpty(MaybeShapeOrRange) Then Exit Function
+    ThrowIfNotShapeOrRange MaybeShapeOrRange
+    Set SpaceBox = MaybeShapeOrRange.BoundingBox.GetCopy
     SpaceBox.Inflate Space, Space, Space, Space
 End Function
 
@@ -851,17 +850,23 @@ Public Function DuplicateActivePage( _
 End Function
 
 Public Sub FillInside( _
-               ByVal ShapeToFill As Shape, _
-               ByVal TargetRect As Rect _
+               ByVal MaybeShapeOrRange As Variant, _
+               ByVal MaybeTargetRect As Variant _
            )
-    If GetHeightKeepProportions(ShapeToFill.BoundingBox, TargetRect.Width) _
-     > TargetRect.Height Then
-        ShapeToFill.SetSize TargetRect.Width
+    If VBA.IsEmpty(MaybeShapeOrRange) _
+    Or VBA.IsEmpty(MaybeTargetRect) Then Exit Sub
+    ThrowIfNotShapeOrRange MaybeShapeOrRange
+    
+    If GetHeightKeepProportions( _
+           MaybeShapeOrRange.BoundingBox, _
+           MaybeTargetRect.Width _
+       ) > MaybeTargetRect.Height Then
+        MaybeShapeOrRange.SetSize MaybeTargetRect.Width
     Else
-        ShapeToFill.SetSize , TargetRect.Height
+        MaybeShapeOrRange.SetSize , MaybeTargetRect.Height
     End If
-    ShapeToFill.CenterX = TargetRect.CenterX
-    ShapeToFill.CenterY = TargetRect.CenterY
+    MaybeShapeOrRange.CenterX = MaybeTargetRect.CenterX
+    MaybeShapeOrRange.CenterY = MaybeTargetRect.CenterY
 End Sub
 
 Public Sub FitInside( _
@@ -973,29 +978,31 @@ End Sub
 
 'правильно перемещает Shape или ShapeRange на другой слой
 Public Function MoveToLayer( _
-                    ByVal ShapeOrRange As Object, _
-                    ByVal Layer As Layer _
+                    ByVal MaybeShapeOrRange As Variant, _
+                    ByVal MaybeLayer As Layer _
                 )
+    If VBA.IsEmpty(MaybeShapeOrRange) _
+    Or VBA.IsEmpty(MaybeLayer) Then Exit Function
+    ThrowIfNotShapeOrRange MaybeShapeOrRange
     
     Dim tSrcLayer() As Layer
     Dim tProps() As typeLayerProps
     Dim tLayersCol As Collection
     Dim i&
     
-    If TypeOf ShapeOrRange Is Shape Then
+    If TypeOf MaybeShapeOrRange Is Shape Then
     
         Set tLayersCol = New Collection
-        tLayersCol.Add ShapeOrRange.Layer
+        tLayersCol.Add MaybeShapeOrRange.Layer
         
-    ElseIf TypeOf ShapeOrRange Is ShapeRange Then
+    ElseIf TypeOf MaybeShapeOrRange Is ShapeRange Then
         
-        If ShapeOrRange.Count < 1 Then Exit Function
-        Set tLayersCol = ShapeRangeLayers(ShapeOrRange)
+        If MaybeShapeOrRange.Count < 1 Then Exit Function
+        Set tLayersCol = ShapeRangeLayers(MaybeShapeOrRange)
         
     Else
     
-        Err.Raise 13, Source:="MoveToLayer", _
-                  Description:="Type mismatch: ShapeOrRange должен быть Shape или ShapeRange"
+        Throw "Type mismatch: MaybeShapeOrRange должен быть Shape или ShapeRange"
         Exit Function
     
     End If
@@ -1006,7 +1013,7 @@ Public Function MoveToLayer( _
         Set tSrcLayer(i) = tLayersCol(i)
         LayerPropsPreserveAndReset tSrcLayer(i), tProps(i)
     Next i
-    ShapeOrRange.MoveToLayer Layer
+    MaybeShapeOrRange.MoveToLayer MaybeLayer
     For i = 1 To tLayersCol.Count
         LayerPropsRestore tSrcLayer(i), tProps(i)
     Next i
@@ -1566,6 +1573,17 @@ Private Function IsIntersectReady(ByVal Shape As Shape) As Boolean
         End If
     End With
 End Function
+
+Private Sub ThrowIfNotShapeOrRange( _
+                ByVal MaybeShapeOrRange As Variant _
+            )
+    If VBA.IsObject(MaybeShapeOrRange) Then
+        If TypeOf MaybeShapeOrRange Is Shape _
+        Or TypeOf MaybeShapeOrRange Is ShapeRange Then _
+            Exit Sub
+    End If
+    Throw "Тип должен быть Shape или ShapeRange"
+End Sub
 
 Private Sub ThrowIfNotCollectionOrArray(ByRef CollectionOrArray As Variant)
     If VBA.IsObject(CollectionOrArray) Then _
