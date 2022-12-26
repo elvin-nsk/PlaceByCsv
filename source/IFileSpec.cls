@@ -32,9 +32,9 @@ End Property
 Public Property Let NameWithoutExt(ByVal RHS As String)
 End Property
 
-Public Property Get path() As String
+Public Property Get Path() As String
 End Property
-Public Property Let path(ByVal RHS As String)
+Public Property Let Path(ByVal RHS As String)
 End Property
 
 '===============================================================================

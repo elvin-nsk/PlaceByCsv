@@ -15,7 +15,7 @@ Implements IFileSpec
 '===============================================================================
 
 Private Type typeThis
-  path As String
+  Path As String
   NameWithoutExt As String
   Ext As String
 End Type
@@ -31,7 +31,7 @@ End Function
 
 Friend Function Init(ByVal File As String) As IFileSpec
   With This
-    .path = GetFilePath(File)
+    .Path = GetFilePath(File)
     .NameWithoutExt = GetFileNameWithoutExt(GetFileName(File))
     .Ext = GetFileExt(GetFileName(File))
   End With
@@ -49,7 +49,7 @@ End Property
 
 Private Function IFileSpec_ToString() As String
   With This
-    IFileSpec_ToString = .path & .NameWithoutExt & AddDotIfNotEmpty(.Ext)
+    IFileSpec_ToString = .Path & .NameWithoutExt & AddDotIfNotEmpty(.Ext)
   End With
 End Function
 
@@ -73,10 +73,10 @@ Private Property Let IFileSpec_NameWithoutExt(ByVal RHS As String)
 End Property
 
 Private Property Get IFileSpec_Path() As String
-  IFileSpec_Path = This.path
+  IFileSpec_Path = This.Path
 End Property
 Private Property Let IFileSpec_Path(ByVal RHS As String)
-  This.path = AddProperEndingToPath(RHS)
+  This.Path = AddProperEndingToPath(RHS)
 End Property
 
 Private Property Get IFileSpec_Self() As IFileSpec
@@ -85,9 +85,9 @@ End Property
 
 '===============================================================================
 
-Private Function AddProperEndingToPath(ByVal path As String) As String
-  If Not VBA.Right$(path, 1) = "\" Then AddProperEndingToPath = path & "\" _
-  Else AddProperEndingToPath = path
+Private Function AddProperEndingToPath(ByVal Path As String) As String
+  If Not VBA.Right$(Path, 1) = "\" Then AddProperEndingToPath = Path & "\" _
+  Else AddProperEndingToPath = Path
 End Function
 
 Private Function GetFileExt(FileName As String) As String

@@ -15,7 +15,7 @@ Public Const APP_NAME As String = "PlaceByTable"
 
 '===============================================================================
 
-Private Const SomeConst As String = ""
+Private Const ImportExt As String = "cdr"
 
 '===============================================================================
 
@@ -29,11 +29,14 @@ Sub Start()
     Dim Table As Dictionary
     Set Table = ParseTable(GetTable(Cfg.CsvFile, Cfg.CsvSeparator))
     
+    Dim Imposition As Document
+    Set Imposition = CreateDocument
+    
     Dim Groups As Collection
     Set Groups = ProcessTableAsGroups(Table, Cfg)
-    Debug.Print Groups.Count
+    'Debug.Print Groups.Count
     
-    Dim Imposition As Document
+    
     
     
     'BoostStart APP_NAME, RELEASE
@@ -78,6 +81,8 @@ Private Function GetTable( _
             .ParseCsvToArray(Str)
 End Function
 
+'-------------------------------------------------------------------------------
+
 Private Function ProcessTableAsGroups( _
                      ByVal Table As Dictionary, _
                      ByVal Cfg As Config _
@@ -92,35 +97,72 @@ Private Function ProcessTableAsGroups( _
     Dim MaxPlacesPerSide As Long
     MaxPlacesPerSide = Cfg.MaxPlacesPerSideX * Cfg.MaxPlacesPerSideY
     Dim Row As Long
+    Row = 1
     
-    Do
+    Do Until Row > TotalRows
         
         CurrentPairIndex = 1
         Set Group = New GroupTwoSides
         Set Group.Fronts = New Collection
         Set Group.Backs = New Collection
         
-        Do
-            CurrentPairIndex = CurrentPairIndex + 1
-            Row = Row + 1
+        Do Until CurrentPairIndex > MaxPlacesPerSide
             Group.Fronts.Add ProcessPlace(True, Row, Table, Cfg)
             Group.Backs.Add ProcessPlace(False, Row, Table, Cfg)
-        Loop Until CurrentPairIndex >= MaxPlacesPerSide
-        
+            CurrentPairIndex = CurrentPairIndex + 1
+            Row = Row + 1
+            If Row > TotalRows Then Exit Do
+        Loop
+                        
         ProcessTableAsGroups.Add Group
         
-    Loop Until Row >= TotalRows
+    Loop
     
 End Function
 
 Private Function ProcessPlace( _
-                     ByVal Face As Boolean, _
+                     ByVal Front As Boolean, _
                      ByVal Row As Long, _
                      ByVal Table As Dictionary, _
                      ByVal Cfg As Config _
                  ) As Place
-
+    Dim Tag As String
+    If Front Then Tag = Cfg.FrontTag Else Tag = Cfg.BackTag
+    Dim File As IFileSpec
+    Set File = FileSpec.Create
+    File.Path = Cfg.SourceFolder
+    File.NameWithoutExt = Table(Tag)(Row)
+    File.Ext = ImportExt
+    Dim Shape As Shape
+    With TryImportShape(File.ToString)
+        If .IsRight Then
+            Set Shape = .Right
+        Else
+            Throw "Ошибка импорта файла из таблицы, строка " _
+                & VBA.CStr(Row + 1) & ", столбец " & Tag
+        End If
+    End With
+    
+    With New Place
+        Set .Shape = Shape
+        .IsFront = Front
+        .Name = Table(Tag)(Row)
+        .Parse Cfg, Table
+        Set ProcessPlace = .Self
+    End With
+    
 End Function
+
+Private Function TryImportShape(ByVal File As String) As IEither
+On Error GoTo Fail
+    ActiveLayer.Import File, cdrCDR
+    Set TryImportShape = Either.SetRight(ActiveShape)
+    Exit Function
+Fail:
+    Set TryImportShape = Either.SetLeft("Ошибка импорта файла " & File)
+End Function
+
+'-------------------------------------------------------------------------------
 
 '===============================================================================
 ' # тесты

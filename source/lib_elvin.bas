@@ -1,7 +1,7 @@
 Attribute VB_Name = "lib_elvin"
 '===============================================================================
 '   Модуль          : lib_elvin
-'   Версия          : 2022.12.25
+'   Версия          : 2022.12.26
 '   Автор           : elvin-nsk (me@elvin.nsk.ru)
 '   Использован код : dizzy (из макроса CtC), Alex Vakulenko
 '                     и др.
@@ -234,6 +234,20 @@ Public Function FindShapesActivePageLayers( _
                 FindShapesActivePageLayers.AddRange tLayer.Shapes.All
     Next
     End If
+End Function
+
+Public Function FindShapesWithText( _
+                     ByVal Source As ShapeRange, _
+                     ByVal Text As String _
+                 ) As ShapeRange
+    Dim TextShapes As ShapeRange
+    Set TextShapes = Source.Shapes.FindShapes(Type:=cdrTextShape)
+    Set FindShapesWithText = CreateShapeRange
+    Dim Shape As Shape
+    For Each Shape In TextShapes
+        If VBA.InStr(1, Shape.Text.Story.Text, Text, vbTextCompare) > 0 Then _
+            FindShapesWithText.Add Shape
+    Next Shape
 End Function
 
 'возвращает коллекцию слоёв с текущей страницы, имена которых включают NamePart
@@ -573,6 +587,14 @@ Public Function IsOverlapBox( _
     tLayer.Activate
 End Function
 
+Public Function IsSameColor( _
+                    ByVal MaybeColor1 As Variant, _
+                    ByVal MaybeColor2 As Variant _
+                ) As Boolean
+    If VBA.IsEmpty(MaybeColor1) Or VBA.IsEmpty(MaybeColor2) Then Exit Function
+    IsSameColor = MaybeColor1.IsSame(MaybeColor2)
+End Function
+
 'являются ли кривые дубликатами, находящимися друг над другом в одном месте
 '(underlying dubs)
 Public Function IsSameCurves( _
@@ -673,6 +695,11 @@ Public Function SpaceBox(ByVal ShapeOrRange As Object, Space#) As Rect
     End If
     Set SpaceBox = ShapeOrRange.BoundingBox.GetCopy
     SpaceBox.Inflate Space, Space, Space, Space
+End Function
+
+'возвращает Outline если или Empty
+Public Function TryGetOutline(ByVal Shape As Shape) As Variant
+    If ShapeHasOutline(Shape) Then Set TryGetOutline = Shape.Outline
 End Function
 
 '===============================================================================
@@ -1075,9 +1102,9 @@ End Function
 '===============================================================================
 ' # функции работы с файлами
 
-Public Function AddProperEndingToPath(ByVal path As String) As String
-    If Not VBA.Right$(path, 1) = "\" Then AddProperEndingToPath = path & "\" _
-    Else: AddProperEndingToPath = path
+Public Function AddProperEndingToPath(ByVal Path As String) As String
+    If Not VBA.Right$(Path, 1) = "\" Then AddProperEndingToPath = Path & "\" _
+    Else: AddProperEndingToPath = Path
 End Function
 
 'существует ли файл или папка (папка должна заканчиваться на "\")
@@ -1132,7 +1159,7 @@ End Function
 ' Procedure         : GetFileName
 ' Author            : CARDA Consultants Inc.
 ' Website           : http://www.cardaconsultants.com
-' Purpose           : Return the filename from a path\filename input
+' Purpose           : Return the filename from a Path\filename input
 ' Copyright         : The following may be altered and reused as you wish so long as the
 '                     copyright notice is left unchanged (including Author, Website and
 '                     Copyright).    It may not be sold/resold or reposted on other sites (links
@@ -1140,7 +1167,7 @@ End Function
 '
 ' Input Variables:
 ' ~~~~~~~~~~~~~~~~
-' sFile - string of a path and filename (ie: "c:\temp\Test.xls")
+' sFile - string of a Path and filename (ie: "c:\temp\Test.xls")
 '
 ' Revision History:
 ' Rev               Date(yyyy/mm/dd)              Description
@@ -1167,7 +1194,7 @@ End Function
 ' Procedure : GetFilePath
 ' Author            : CARDA Consultants Inc.
 ' Website           : http://www.cardaconsultants.com
-' Purpose           : Return the path from a path\filename input
+' Purpose           : Return the Path from a Path\filename input
 ' Copyright         : The following may be altered and reused as you wish so long as the
 '                     copyright notice is left unchanged (including Author, Website and
 '                     Copyright).    It may not be sold/resold or reposted on other sites (links
@@ -1175,7 +1202,7 @@ End Function
 '
 ' Input Variables:
 ' ~~~~~~~~~~~~~~~~
-' sFile - string of a path and filename (ie: "c:\temp\Test.xls")
+' sFile - string of a Path and filename (ie: "c:\temp\Test.xls")
 '
 ' Revision History:
 ' Rev               Date(yyyy/mm/dd)              Description
@@ -1200,9 +1227,9 @@ End Function
 
 'создаёт папку, если не было
 'возвращает Path обратно (для inline-использования)
-Public Function MakeDir(ByVal path As String) As String
-    If VBA.Dir(path, vbDirectory) = "" Then MkDir path
-    MakeDir = path
+Public Function MakeDir(ByVal Path As String) As String
+    If VBA.Dir(Path, vbDirectory) = "" Then MkDir Path
+    MakeDir = Path
 End Function
 
 'загружает файл в строку
@@ -1399,18 +1426,21 @@ Public Function FindMinItemNum(ByRef Collection As Collection) As Long
     Next i
 End Function
 
-Public Function MinOfTwo( _
-                    ByVal Value1 As Variant, _
-                    ByVal Value2 As Variant _
-                ) As Variant
-    If Value1 < Value2 Then MinOfTwo = Value1 Else MinOfTwo = Value2
+'является ли число чётным :) Что такое Even и Odd запоминать лень...
+Public Function IsChet(ByVal X As Variant) As Boolean
+    If X Mod 2 = 0 Then IsChet = True Else IsChet = False
 End Function
 
-Public Function MaxOfTwo( _
-                    ByVal Value1 As Variant, _
-                    ByVal Value2 As Variant _
-                ) As Variant
-    If Value1 > Value2 Then MaxOfTwo = Value1 Else MaxOfTwo = Value2
+'делится ли Number на Divider нацело
+Public Function IsDivider( _
+                    ByVal Number As Long, _
+                    ByVal Divider As Long _
+                ) As Boolean
+    If Number Mod Divider = 0 Then IsDivider = True Else IsDivider = False
+End Function
+
+Public Function IsLowerCase(ByVal Str As String) As Boolean
+    If VBA.LCase(Str) = Str Then IsLowerCase = True
 End Function
 
 Public Function IsSame( _
@@ -1439,17 +1469,8 @@ Public Function IsStrInArr( _
         IsStrInArr = False
 End Function
 
-'является ли число чётным :) Что такое Even и Odd запоминать лень...
-Public Function IsChet(ByVal X As Variant) As Boolean
-    If X Mod 2 = 0 Then IsChet = True Else IsChet = False
-End Function
-
-'делится ли Number на Divider нацело
-Public Function IsDivider( _
-                    ByVal Number As Long, _
-                    ByVal Divider As Long _
-                ) As Boolean
-    If Number Mod Divider = 0 Then IsDivider = True Else IsDivider = False
+Public Function IsUpperCase(ByVal Str As String) As Boolean
+    If VBA.UCase(Str) = Str Then IsUpperCase = True
 End Function
 
 Public Sub RemoveElementFromCollection( _
@@ -1466,12 +1487,18 @@ Public Sub RemoveElementFromCollection( _
     Next i
 End Sub
 
-'случайное целое от LowerBound до UpperBound
-Public Function RndInt( _
-                    ByVal LowerBound As Long, _
-                    ByVal UpperBound As Long _
-                ) As Long
-    RndInt = Int((UpperBound - LowerBound + 1) * Rnd + LowerBound)
+Public Function MinOfTwo( _
+                    ByVal Value1 As Variant, _
+                    ByVal Value2 As Variant _
+                ) As Variant
+    If Value1 < Value2 Then MinOfTwo = Value1 Else MinOfTwo = Value2
+End Function
+
+Public Function MaxOfTwo( _
+                    ByVal Value1 As Variant, _
+                    ByVal Value2 As Variant _
+                ) As Variant
+    If Value1 > Value2 Then MaxOfTwo = Value1 Else MaxOfTwo = Value2
 End Function
 
 Public Function MeasureStart()
@@ -1479,6 +1506,14 @@ Public Function MeasureStart()
 End Function
 Public Function MeasureFinish(Optional ByVal Message As String = "")
     Debug.Print Message & CStr(Round(Timer - StartTime, 3)) & " секунд"
+End Function
+
+'случайное целое от LowerBound до UpperBound
+Public Function RndInt( _
+                    ByVal LowerBound As Long, _
+                    ByVal UpperBound As Long _
+                ) As Long
+    RndInt = Int((UpperBound - LowerBound + 1) * Rnd + LowerBound)
 End Function
 
 '===============================================================================

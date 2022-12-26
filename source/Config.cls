@@ -98,7 +98,7 @@ Private Sub Assign(ByVal Action As iniAction)
         .KeyVar "SidesMinDistanceX", SidesMinDistanceX, _
             48
         .KeyVar "SourceFolder", SourceFolder, _
-            "c:\temp"
+            "e:\WORK\макросы Corel\на заказ\Евгений Галанов\PlaceByCsv\материалы\test\"
     
     End With
     
