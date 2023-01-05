@@ -1,7 +1,7 @@
 Attribute VB_Name = "PlaceByTable"
 '===============================================================================
 '   Макрос          : PlaceByTable
-'   Версия          : 2022.12.27
+'   Версия          : 2023.01.05
 '   Сайты           : https://vk.com/elvin_macro
 '                     https://github.com/elvin-nsk
 '   Автор           : elvin-nsk (me@elvin.nsk.ru)
@@ -156,6 +156,15 @@ Private Function ProcessPlace( _
     With TryImportShape(File.ToString)
         If .IsRight Then
             Set Shape = .Right
+            ' // для отладки
+            If Not RELEASE Then
+                With ActiveLayer.CreateRectangleRect(Shape.BoundingBox)
+                    .OrderBackOf Shape.Shapes.Last
+                    .Fill.ApplyUniformFill CreateCMYKColor(0, 100, 0, 0)
+                    .Outline.SetNoOutline
+                End With
+            End If
+            ' //
         Else
             Throw "Ошибка импорта файла из таблицы, строка " _
                 & VBA.CStr(Row + 1) & ", столбец " & Tag

@@ -101,7 +101,7 @@ Private Property Get IComposerElement_Height() As Double
 End Property
 
 Private Property Let IComposerElement_PivotX(ByVal RHS As Double)
-    Shape.LeftX = RHS + (CropBox.LeftX - Shape.LeftX)
+    Shape.LeftX = RHS + (Shape.LeftX - CropBox.LeftX)
 End Property
 Private Property Get IComposerElement_PivotX() As Double
     IComposerElement_PivotX = CropBox.LeftX
