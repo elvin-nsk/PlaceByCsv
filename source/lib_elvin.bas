@@ -1,7 +1,7 @@
 Attribute VB_Name = "lib_elvin"
 '===============================================================================
 '   Модуль          : lib_elvin
-'   Версия          : 2022.12.27
+'   Версия          : 2023.01.05
 '   Автор           : elvin-nsk (me@elvin.nsk.ru)
 '   Использован код : dizzy (из макроса CtC), Alex Vakulenko
 '                     и др.
@@ -1515,6 +1515,23 @@ Public Function MeasureFinish(Optional ByVal Message As String = "")
     Debug.Print Message & CStr(Round(Timer - StartTime, 3)) & " секунд"
 End Function
 
+'создаёт ShapeRange из Shape/Shapes/ShapeRange
+Public Function PackShapes(ParamArray Shapes() As Variant) As ShapeRange
+    Set PackShapes = CreateShapeRange
+    Dim Item As Variant
+    For Each Item In Shapes
+        If TypeOf Item Is Shape Then
+            PackShapes.Add Item
+        ElseIf TypeOf Item Is ShapeRange Then
+            PackShapes.AddRange Item
+        ElseIf TypeOf Item Is Shapes Then
+            PackShapes.AddRange Item.All
+        Else
+            Throw "Не является шейпом"
+        End If
+    Next Item
+End Function
+
 'случайное целое от LowerBound до UpperBound
 Public Function RndInt( _
                     ByVal LowerBound As Long, _
@@ -1578,9 +1595,11 @@ Private Sub ThrowIfNotShapeOrRange( _
                 ByVal MaybeShapeOrRange As Variant _
             )
     If VBA.IsObject(MaybeShapeOrRange) Then
-        If TypeOf MaybeShapeOrRange Is Shape _
-        Or TypeOf MaybeShapeOrRange Is ShapeRange Then _
-            Exit Sub
+        If Not MaybeShapeOrRange Is Nothing Then
+            If TypeOf MaybeShapeOrRange Is Shape _
+            Or TypeOf MaybeShapeOrRange Is ShapeRange Then _
+                Exit Sub
+        End If
     End If
     Throw "Тип должен быть Shape или ShapeRange"
 End Sub

@@ -116,7 +116,9 @@ Private Function ProcessTableAsGroups( _
     Dim MaxPlacesPerSide As Long
     MaxPlacesPerSide = Cfg.MaxPlacesPerSideX * Cfg.MaxPlacesPerSideY
     Dim Row As Long
-    Row = 1
+    Row = 0
+    Dim LastCropBoxFace As Rect
+    Dim LastCropBoxBack As Rect
     
     Do Until Row > TotalRows
         
@@ -126,11 +128,26 @@ Private Function ProcessTableAsGroups( _
         Set Group.Backs = New Collection
         
         Do Until CurrentPairIndex > MaxPlacesPerSide
-            Group.Fronts.Add ProcessPlace(True, Row, Table, Cfg)
-            Group.Backs.Add ProcessPlace(False, Row, Table, Cfg)
-            CurrentPairIndex = CurrentPairIndex + 1
             Row = Row + 1
-            If Row > TotalRows Then Exit Do
+            If Row <= TotalRows Then
+                Group.Fronts.Add ProcessPlace(True, Row, Table, Cfg)
+                Group.Backs.Add ProcessPlace(False, Row, Table, Cfg)
+                Set LastCropBoxFace = _
+                    Group.Fronts(Group.Fronts.Count). _
+                    ToCropBoxLayer.BoundingBox.GetCopy
+                Set LastCropBoxBack = _
+                    Group.Backs(Group.Backs.Count). _
+                    ToCropBoxLayer.BoundingBox.GetCopy
+                CurrentPairIndex = CurrentPairIndex + 1
+            Else
+                If CurrentPairIndex <= MaxPlacesPerSide Then
+                    Group.Fronts.Add CreateEmptyPlace(True, LastCropBoxFace)
+                    Group.Backs.Add CreateEmptyPlace(False, LastCropBoxBack)
+                    CurrentPairIndex = CurrentPairIndex + 1
+                Else
+                    Exit Do
+                End If
+            End If
         Loop
                         
         ProcessTableAsGroups.Add Group
@@ -185,6 +202,22 @@ Private Function ProcessPlace( _
     
 End Function
 
+Private Function CreateEmptyPlace( _
+                     ByVal Front As Boolean, _
+                     ByVal Size As Rect _
+                 ) As Place
+    With New Place
+        Set .Shape = ActiveLayer.CreateRectangleRect(Size)
+        .IsFront = Front
+        .IsEmpty = True
+        Set .CropBox = PackShapes(.Shape)
+        Set CreateEmptyPlace = .Self
+        ' // для отладки
+        If RELEASE Then .Shape.Outline.SetNoOutline
+        ' //
+    End With
+End Function
+
 Private Function TryImportShape(ByVal File As String) As IEither
 On Error GoTo Fail
     ActiveLayer.Import File, cdrCDR
@@ -214,7 +247,7 @@ End Sub
 
 Private Sub TuneContentSize( _
                 ByVal Content As ShapeRange, _
-                ByVal CropBox As Shape, _
+                ByVal CropBox As ShapeRange, _
                 ByVal Mult As Double _
             )
     Dim MaxWidth As Double
@@ -325,11 +358,15 @@ Private Sub SpreadPlacesToLayers( _
             )
     Dim Place As Place
     For Each Place In Places
-        Place.Shape.Ungroup
-        MoveToLayer Place.ToLayer1, TargetLayers.Layer1
-        MoveToLayer Place.ToLayer2, TargetLayers.Layer2
-        MoveToLayer Place.ToLayer3, TargetLayers.Layer3
-        MoveToLayer Place.ToCropBoxLayer, TargetLayers.CropBoxLayer
+        If Place.IsEmpty Then
+            MoveToLayer Place.Shape, TargetLayers.CropBoxLayer
+        Else
+            Place.Shape.Ungroup
+            MoveToLayer Place.ToLayer1, TargetLayers.Layer1
+            MoveToLayer Place.ToLayer2, TargetLayers.Layer2
+            MoveToLayer Place.ToLayer3, TargetLayers.Layer3
+            MoveToLayer Place.ToCropBoxLayer, TargetLayers.CropBoxLayer
+        End If
     Next Place
 End Sub
 
@@ -337,5 +374,5 @@ End Sub
 ' # тесты
 
 Private Sub testSomething()
-'
+    Debug.Print ActiveShape.SizeWidth
 End Sub

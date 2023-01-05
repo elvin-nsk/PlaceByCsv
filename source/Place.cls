@@ -15,7 +15,8 @@ Implements IComposerElement
 '===============================================================================
 
 Public Content As ShapeRange
-Public CropBox As Shape
+Public CropBox As ShapeRange
+Public IsEmpty As Boolean
 Public IsFront As Boolean
 Public Name As String
 Public Shape As Shape
@@ -42,13 +43,13 @@ Public Sub Parse(ByVal Cfg As Config, ByVal Table As Dictionary)
     
     Set ToCropBoxLayer = _
             FindByOutlineColor( _
-                ActivePage.Shapes.All, _
+                Shape.Shapes.All, _
                 Cfg.CropBoxOutlineColor _
             )
-    If ToCropBoxLayer.Count > 0 Then
-        Set CropBox = ToCropBoxLayer.FirstShape
+    If ToCropBoxLayer.Count = 0 Then
+        Set CropBox = Shape.Shapes.All
     Else
-        Set CropBox = Shape
+        Set CropBox = ToCropBoxLayer
     End If
     
     Set Content = _
@@ -119,8 +120,7 @@ Private Property Get IComposerElement_Self() As IComposerElement
 End Property
 
 Private Property Get IComposerElement_Shapes() As ShapeRange
-    Set IComposerElement_Shapes = CreateShapeRange
-    IComposerElement_Shapes.Add Shape
+    Set IComposerElement_Shapes = PackShapes(Shape)
 End Property
 
 Private Property Get IComposerElement_Width() As Double
