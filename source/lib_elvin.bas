@@ -1,7 +1,7 @@
 Attribute VB_Name = "lib_elvin"
 '===============================================================================
 '   Модуль          : lib_elvin
-'   Версия          : 2023.01.05
+'   Версия          : 2023.01.08
 '   Автор           : elvin-nsk (me@elvin.nsk.ru)
 '   Использован код : dizzy (из макроса CtC), Alex Vakulenko
 '                     и др.
@@ -95,21 +95,21 @@ End Sub
 ' # функции поиска и получения информации об объектах корела
 
 'возвращает среднее сторон шейпа/рэйнджа/страницы
-Public Function AverageDim(ByVal ShapeOrRangeOrPage As Object) As Double
+Public Property Get AverageDim(ByVal ShapeOrRangeOrPage As Object) As Double
     If Not TypeOf ShapeOrRangeOrPage Is Shape _
    And Not TypeOf ShapeOrRangeOrPage Is ShapeRange _
    And Not TypeOf ShapeOrRangeOrPage Is Page Then
         Err.Raise 13, Source:="AverageDim", _
                   Description:="Type mismatch: ShapeOrRangeOrPage должен быть Shape, ShapeRange или Page"
-        Exit Function
+        Exit Property
     End If
     AverageDim = (ShapeOrRangeOrPage.SizeWidth + ShapeOrRangeOrPage.SizeHeight) _
                / 2
-End Function
+End Property
 
 'находит все шейпы, включая шейпы в поверклипах, с рекурсией,
 'опционально исключая шейпы-поверклипы и шейпы-группы
-Public Function FindAllShapes( _
+Public Property Get FindAllShapes( _
                     ByVal Shapes As ShapeRange, _
                     Optional ExcludeGroupShapes As Boolean = False, _
                     Optional ExcludePowerClipShapes As Boolean = False _
@@ -128,29 +128,29 @@ Public Function FindAllShapes( _
         FindAllShapes.RemoveRange _
             FindPowerClips(FindAllShapes)
     End If
-End Function
+End Property
 
 'находит все шейпы с данным именем, включая шейпы в поверклипах, с рекурсией
-Public Function FindShapesByName( _
+Public Property Get FindShapesByName( _
                     ByVal Shapes As ShapeRange, _
                     ByVal Name As String _
                 ) As ShapeRange
     Set FindShapesByName = FindAllShapes(Shapes).Shapes.FindShapes(Name)
-End Function
+End Property
 
 'находит все шейпы, часть имени которых совпадает с NamePart,
 'включая шейпы в поверклипах, с рекурсией
-Public Function FindShapesByNamePart( _
+Public Property Get FindShapesByNamePart( _
                     ByVal Shapes As ShapeRange, _
                     ByVal NamePart As String _
                 ) As ShapeRange
     Set FindShapesByNamePart = FindAllShapes(Shapes).Shapes.FindShapes( _
                                    Query:="@Name.Contains('" & NamePart & "')" _
                                )
-End Function
+End Property
 
 'находит поверклипы, без рекурсии
-Public Function FindPowerClips(ByVal Shapes As ShapeRange) As ShapeRange
+Public Property Get FindPowerClips(ByVal Shapes As ShapeRange) As ShapeRange
     Set FindPowerClips = CreateShapeRange
     'On Error Resume Next
     'FindPowerClips.AddRange Shapes.Shapes.FindShapes(Query:="!@com.PowerClip.IsNull")
@@ -159,16 +159,18 @@ Public Function FindPowerClips(ByVal Shapes As ShapeRange) As ShapeRange
         If Not lib_elvin.IsNothing(Shape) Then _
             If Not Shape.PowerClip Is Nothing Then FindPowerClips.Add Shape
     Next Shape
-End Function
+End Property
 
 'находит содержимое поверклипов, без рекурсии
-Public Function FindShapesInPowerClips(ByVal Shapes As ShapeRange) As ShapeRange
+Public Property Get FindShapesInPowerClips( _
+                        ByVal Shapes As ShapeRange _
+                    ) As ShapeRange
     Dim Shape As Shape
     Set FindShapesInPowerClips = CreateShapeRange
     For Each Shape In FindPowerClips(Shapes)
         FindShapesInPowerClips.AddRange Shape.PowerClip.Shapes.All
     Next Shape
-End Function
+End Property
 
 'отсюда: https://community.coreldraw.com/talk/coreldraw_graphics_suite_x4/f/coreldraw-graphics-suite-x4/57576/macro-list-fonts-within-a-text-file
 Public Sub FindFontsInRange( _
@@ -209,16 +211,16 @@ Private Sub AddFontToCollection( _
     If Not Found Then ioFonts.Add FontName
 End Sub
 
-Public Function DiffWithinTolerance( _
+Public Property Get DiffWithinTolerance( _
                      ByVal Number1 As Variant, _
                      ByVal Number2 As Variant, _
                      ByVal Tolerance As Variant _
                  ) As Boolean
     DiffWithinTolerance = VBA.Abs(Number1 - Number2) < Tolerance
-End Function
+End Property
 
 'возвращает все шейпы на всех слоях текущей страницы, по умолчанию - без мастер-слоёв и без гайдов
-Public Function FindShapesActivePageLayers( _
+Public Property Get FindShapesActivePageLayers( _
                     Optional ByVal GuidesLayers As Boolean, _
                     Optional ByVal MasterLayers As Boolean _
                 ) As ShapeRange
@@ -234,9 +236,9 @@ Public Function FindShapesActivePageLayers( _
                 FindShapesActivePageLayers.AddRange tLayer.Shapes.All
     Next
     End If
-End Function
+End Property
 
-Public Function FindShapesWithText( _
+Public Property Get FindShapesWithText( _
                      ByVal Source As ShapeRange, _
                      ByVal Text As String _
                  ) As ShapeRange
@@ -248,10 +250,10 @@ Public Function FindShapesWithText( _
         If VBA.InStr(1, Shape.Text.Story.Text, Text, vbTextCompare) > 0 Then _
             FindShapesWithText.Add Shape
     Next Shape
-End Function
+End Property
 
 'возвращает коллекцию слоёв с текущей страницы, имена которых включают NamePart
-Public Function FindLayersActivePageByNamePart( _
+Public Property Get FindLayersActivePageByNamePart( _
                     ByVal NamePart As String, _
                     Optional ByVal SearchMasters = True _
                 ) As Collection
@@ -267,10 +269,10 @@ Public Function FindLayersActivePageByNamePart( _
         If InStr(tLayer.Name, NamePart) > 0 Then _
             FindLayersActivePageByNamePart.Add tLayer
     Next
-End Function
+End Property
 
 'найти дубликат слоя по ряду параметров (достовернее, чем поиск по имени)
-Public Function FindLayerDuplicate( _
+Public Property Get FindLayerDuplicate( _
                     ByVal PageToSearch As Page, _
                     ByVal SrcLayer As Layer _
                 ) As Layer
@@ -280,20 +282,20 @@ Public Function FindLayerDuplicate( _
                  (.IsDesktopLayer = SrcLayer.IsDesktopLayer) And _
                  (.Master = SrcLayer.Master) And _
                  (.Color.IsSame(SrcLayer.Color)) Then _
-                 Exit Function
+                 Exit Property
         End With
     Next
     Set FindLayerDuplicate = Nothing
-End Function
+End Property
 
-Public Function GetAverageColor(ByVal Colors As Collection) As Color
+Public Property Get GetAverageColor(ByVal Colors As Collection) As Color
     If Colors.Count = 0 Then
         Throw "No colors in colors collection"
-        Exit Function
+        Exit Property
     End If
     If Colors.Count = 1 Then
         Set GetAverageColor = Colors(1).GetCopy
-        Exit Function
+        Exit Property
     End If
     Dim Index As Long
     For Index = 1 To Colors.Count
@@ -304,9 +306,9 @@ Public Function GetAverageColor(ByVal Colors As Collection) As Color
                 100 - (100 / Index) _
             )
     Next Index
-End Function
+End Property
 
-Public Function GetAverageColorFromShapes( _
+Public Property Get GetAverageColorFromShapes( _
                     ByVal Shapes As ShapeRange, _
                     Optional ByVal Fills As Boolean = True, _
                     Optional ByVal Outlines As Boolean = True _
@@ -320,9 +322,9 @@ Public Function GetAverageColorFromShapes( _
         ) _
     )
 NoColor:
-End Function
+End Property
 
-Public Function GetBoundColors( _
+Public Property Get GetBoundColors( _
                     ByVal Shapes As ShapeRange, _
                     Optional ByVal Fills As Boolean = True, _
                     Optional ByVal Outlines As Boolean = True _
@@ -337,9 +339,9 @@ Public Function GetBoundColors( _
             If ShapeHasOutline(Shape) Then _
                 GetBoundColors.Add Shape.Outline.Color
     Next Shape
-End Function
+End Property
 
-Public Function GetBoundColorsFromFill( _
+Public Property Get GetBoundColorsFromFill( _
                     ByVal Shape As Shape _
                 ) As Collection
     Set GetBoundColorsFromFill = New Collection
@@ -356,9 +358,9 @@ Public Function GetBoundColorsFromFill( _
             End If
         End If
     End With
-End Function
+End Property
 
-Public Function GetBoundColorsFromFountain( _
+Public Property Get GetBoundColorsFromFountain( _
                     ByVal Shape As Shape _
                 ) As Collection
     Set GetBoundColorsFromFountain = New Collection
@@ -366,116 +368,116 @@ Public Function GetBoundColorsFromFountain( _
     For Each FColor In Shape.Fill.Fountain.Colors
         GetBoundColorsFromFountain.Add FColor.Color
     Next FColor
-End Function
+End Property
 
-Public Function GetBoundColorsFromTwoColorPattern( _
+Public Property Get GetBoundColorsFromTwoColorPattern( _
                      ByVal Shape As Shape _
                  ) As Collection
     Set GetBoundColorsFromTwoColorPattern = New Collection
     GetBoundColorsFromTwoColorPattern.Add Shape.Fill.Pattern.FrontColor
     GetBoundColorsFromTwoColorPattern.Add Shape.Fill.Pattern.BackColor
-End Function
+End Property
 
-Public Function GetBottomOrderShape(ByVal Shapes As ShapeRange) As Shape
-    If Shapes.Count = 0 Then Exit Function
+Public Property Get GetBottomOrderShape(ByVal Shapes As ShapeRange) As Shape
+    If Shapes.Count = 0 Then Exit Property
     Set GetBottomOrderShape = Shapes(1)
-    If Shapes.Count = 1 Then Exit Function
+    If Shapes.Count = 1 Then Exit Property
     Dim Index As Long
     For Index = 2 To Shapes.Count
         If Shapes(Index).ZOrder > GetBottomOrderShape.ZOrder Then
             Set GetBottomOrderShape = Shapes(Index)
         End If
     Next Index
-End Function
+End Property
 
-Public Function GetColorLightness(ByVal Color As Color) As Long
+Public Property Get GetColorLightness(ByVal Color As Color) As Long
     Dim GrayScale As Color
     Set GrayScale = Color.GetCopy
     GrayScale.ConvertToGray
     GetColorLightness = GrayScale.Gray
-End Function
+End Property
 
-Public Function GetHeightKeepProportions( _
+Public Property Get GetHeightKeepProportions( _
                     ByVal Rect As Rect, _
                     ByVal Width As Double _
                 ) As Double
     Dim WidthToHeight As Double
     WidthToHeight = Rect.Width / Rect.Height
     GetHeightKeepProportions = Width / WidthToHeight
-End Function
+End Property
 
-Public Function GetMixedColor( _
+Public Property Get GetMixedColor( _
                     ByVal MaybeColor1 As Color, _
                     ByVal MaybeColor2 As Color, _
                     Optional ByVal MixRatio As Long = 50 _
                 ) As Color
-    If MaybeColor1 Is Nothing And MaybeColor2 Is Nothing Then Exit Function
+    If MaybeColor1 Is Nothing And MaybeColor2 Is Nothing Then Exit Property
     If MaybeColor1 Is Nothing Then
         Set GetMixedColor = MaybeColor2.GetCopy
-        Exit Function
+        Exit Property
     ElseIf MaybeColor2 Is Nothing Then
         Set GetMixedColor = MaybeColor1.GetCopy
-        Exit Function
+        Exit Property
     End If
     Set GetMixedColor = MaybeColor1.GetCopy
     GetMixedColor.BlendWith MaybeColor2, MixRatio
-End Function
+End Property
 
-Public Function GetTopOrderShape(ByVal Shapes As ShapeRange) As Shape
-    If Shapes.Count = 0 Then Exit Function
+Public Property Get GetTopOrderShape(ByVal Shapes As ShapeRange) As Shape
+    If Shapes.Count = 0 Then Exit Property
     Set GetTopOrderShape = Shapes(1)
-    If Shapes.Count = 1 Then Exit Function
+    If Shapes.Count = 1 Then Exit Property
     Dim Index As Long
     For Index = 2 To Shapes.Count
         If Shapes(Index).ZOrder < GetTopOrderShape.ZOrder Then
             Set GetTopOrderShape = Shapes(Index)
         End If
     Next Index
-End Function
+End Property
 
-Public Function GetWidthKeepProportions( _
+Public Property Get GetWidthKeepProportions( _
                     ByVal Rect As Rect, _
                     ByVal Height As Double _
                 ) As Double
     Dim WidthToHeight As Double
     WidthToHeight = Rect.Width / Rect.Height
     GetWidthKeepProportions = Height * WidthToHeight
-End Function
+End Property
 
 'возвращает бОльшую сторону шейпа/рэйнджа/страницы
-Public Function GreaterDim(ByVal ShapeOrRangeOrPage As Object) As Double
+Public Property Get GreaterDim(ByVal ShapeOrRangeOrPage As Object) As Double
     If Not TypeOf ShapeOrRangeOrPage Is Shape And Not TypeOf ShapeOrRangeOrPage Is ShapeRange And Not TypeOf ShapeOrRangeOrPage Is Page Then
         Err.Raise 13, Source:="GreaterDim", _
                   Description:="Type mismatch: ShapeOrRangeOrPage должен быть Shape, ShapeRange или Page"
-        Exit Function
+        Exit Property
     End If
     If ShapeOrRangeOrPage.SizeWidth > ShapeOrRangeOrPage.SizeHeight Then
         GreaterDim = ShapeOrRangeOrPage.SizeWidth
     Else
         GreaterDim = ShapeOrRangeOrPage.SizeHeight
     End If
-End Function
+End Property
 
 'является ли шейп/рэйндж/страница альбомным
-Public Function IsLandscape(ByVal ShapeOrRangeOrPage As Object) As Boolean
+Public Property Get IsLandscape(ByVal ShapeOrRangeOrPage As Object) As Boolean
     If Not TypeOf ShapeOrRangeOrPage Is Shape _
    And Not TypeOf ShapeOrRangeOrPage Is ShapeRange _
    And Not TypeOf ShapeOrRangeOrPage Is Page Then
         Err.Raise 13, Source:="IsLandscape", _
                   Description:="Type mismatch: ShapeOrRangeOrPage должен быть Shape, ShapeRange или Page"
-        Exit Function
+        Exit Property
     End If
     If ShapeOrRangeOrPage.SizeWidth > ShapeOrRangeOrPage.SizeHeight Then
         IsLandscape = True
     Else
         IsLandscape = False
     End If
-End Function
+End Property
 
 'тестирует на пустой кореловский объект
 'для пустого объекта коллекции,
 'т. к. для Nothing ошибка может быть уже на этапе вызова
-Public Function IsNothing(ByVal Object As Object) As Boolean
+Public Property Get IsNothing(ByVal Object As Object) As Boolean
     Dim t As Variant
     If Object Is Nothing Then GoTo ExitTrue
     If TypeOf Object Is Document Then
@@ -503,13 +505,13 @@ Public Function IsNothing(ByVal Object As Object) As Boolean
         On Error GoTo ExitTrue
         t = Object.AbsoluteIndex
     End If
-    Exit Function
+    Exit Property
 ExitTrue:
     IsNothing = True
-End Function
+End Property
 
 'todo: ПРОВЕРИТЬ КАК СЛЕДУЕТ
-Public Function IsOverlap( _
+Public Property Get IsOverlap( _
                     ByVal FirstShape As Shape, _
                     ByVal SecondShape As Shape _
                 ) As Boolean
@@ -521,7 +523,7 @@ Public Function IsOverlap( _
     
     If FirstShape.Type = cdrConnectorShape _
     Or SecondShape.Type = cdrConnectorShape Then _
-        Exit Function
+        Exit Property
     
     'запоминаем какой слой был активным
     Dim tLayer As Layer: Set tLayer = ActiveLayer
@@ -560,11 +562,11 @@ Public Function IsOverlap( _
     LayerPropsRestore FirstShape.Layer, tProps
     tLayer.Activate
 
-End Function
+End Property
 
 'IsOverlap здорового человека - меряет по габаритам,
 'но зато стабильно работает и в большинстве случаев его достаточно
-Public Function IsOverlapBox( _
+Public Property Get IsOverlapBox( _
                     ByVal FirstShape As Shape, _
                     ByVal SecondShape As Shape _
                 ) As Boolean
@@ -585,19 +587,19 @@ Public Function IsOverlapBox( _
     'возвращаем всё на место
     LayerPropsRestore FirstShape.Layer, tProps
     tLayer.Activate
-End Function
+End Property
 
-Public Function IsSameColor( _
+Public Property Get IsSameColor( _
                     ByVal MaybeColor1 As Variant, _
                     ByVal MaybeColor2 As Variant _
                 ) As Boolean
-    If VBA.IsEmpty(MaybeColor1) Or VBA.IsEmpty(MaybeColor2) Then Exit Function
+    If VBA.IsEmpty(MaybeColor1) Or VBA.IsEmpty(MaybeColor2) Then Exit Property
     IsSameColor = MaybeColor1.IsSame(MaybeColor2)
-End Function
+End Property
 
 'являются ли кривые дубликатами, находящимися друг над другом в одном месте
 '(underlying dubs)
-Public Function IsSameCurves( _
+Public Property Get IsSameCurves( _
                     ByVal Curve1 As Curve, _
                     ByVal Curve2 As Curve _
                 ) As Boolean
@@ -606,70 +608,72 @@ Public Function IsSameCurves( _
     'допуск = 0.001 мм
     Tolerance = ConvertUnits(0.001, cdrMillimeter, ActiveDocument.Unit)
     IsSameCurves = False
-    If Not Curve1.Nodes.Count = Curve2.Nodes.Count Then Exit Function
-    If Abs(Curve1.Length - Curve2.Length) > Tolerance Then Exit Function
+    If Not Curve1.Nodes.Count = Curve2.Nodes.Count Then Exit Property
+    If Abs(Curve1.Length - Curve2.Length) > Tolerance Then Exit Property
     For Each tNode In Curve1.Nodes
         If Curve2.FindNodeAtPoint( _
                tNode.PositionX, _
                tNode.PositionY, _
                Tolerance * 2 _
-           ) Is Nothing Then Exit Function
+           ) Is Nothing Then Exit Property
     Next
     IsSameCurves = True
-End Function
+End Property
 
 'возвращает меньшую сторону шейпа/рэйнджа/страницы
-Public Function LesserDim(ByVal ShapeOrRangeOrPage As Object) As Double
+Public Property Get LesserDim(ByVal ShapeOrRangeOrPage As Object) As Double
     If Not TypeOf ShapeOrRangeOrPage Is Shape _
    And Not TypeOf ShapeOrRangeOrPage Is ShapeRange _
    And Not TypeOf ShapeOrRangeOrPage Is Page Then
         Err.Raise 13, Source:="LesserDim", _
                   Description:="Type mismatch: ShapeOrRangeOrPage должен быть Shape, ShapeRange или Page"
-        Exit Function
+        Exit Property
     End If
     If ShapeOrRangeOrPage.SizeWidth < ShapeOrRangeOrPage.SizeHeight Then
         LesserDim = ShapeOrRangeOrPage.SizeWidth
     Else
         LesserDim = ShapeOrRangeOrPage.SizeHeight
     End If
-End Function
+End Property
 
-Public Function ShapeHasCurve(ByVal Shape As Shape) As Boolean
+Public Property Get ShapeHasCurve(ByVal Shape As Shape) As Boolean
     On Error GoTo Fail
     ShapeHasCurve = Not (Shape.Curve Is Nothing)
 Fail:
-End Function
+End Property
 
-Public Function ShapeHasOutline(ByVal Shape As Shape) As Boolean
+Public Property Get ShapeHasOutline(ByVal Shape As Shape) As Boolean
     On Error GoTo Fail
     ShapeHasOutline = Not (Shape.Outline.Type = cdrNoOutline)
 Fail:
-End Function
+End Property
 
-Public Function ShapeHasUniformFill(ByVal Shape As Shape) As Boolean
+Public Property Get ShapeHasUniformFill(ByVal Shape As Shape) As Boolean
     On Error GoTo Fail
     ShapeHasUniformFill = (Shape.Fill.Type = cdrUniformFill)
 Fail:
-End Function
+End Property
 
-Public Function ShapeIsInGroup(ByVal Shape As Shape) As Boolean
+Public Property Get ShapeIsInGroup(ByVal Shape As Shape) As Boolean
     On Error GoTo Fail
     ShapeIsInGroup = Not (Shape.ParentGroup Is Nothing)
 Fail:
-End Function
+End Property
 
 'возвращает коллекцию слоёв, на которых лежат шейпы из ренджа
-Public Function ShapeRangeLayers(ByVal ShapeRange As ShapeRange) As Collection
+Public Property Get ShapeRangeLayers( _
+                        ByVal ShapeRange As ShapeRange _
+                    ) As Collection
     
     Dim tShape As Shape
     Dim tLayer As Layer
     Dim inCol As Boolean
     
-    If ShapeRange.Count = 0 Then Exit Function
+    If ShapeRange.Count = 0 Then Exit Property
     Set ShapeRangeLayers = New Collection
     If ShapeRange.Count = 1 Then
         ShapeRangeLayers.Add ShapeRange(1).Layer
-        Exit Function
+        Exit Property
     End If
     
     For Each tShape In ShapeRange
@@ -683,23 +687,23 @@ Public Function ShapeRangeLayers(ByVal ShapeRange As ShapeRange) As Collection
         If inCol = False Then ShapeRangeLayers.Add tShape.Layer
     Next tShape
 
-End Function
+End Property
 
 'возвращает Rect, равный габаритам объекта плюс Space со всех сторон
-Public Function SpaceBox( _
+Public Property Get SpaceBox( _
                     ByVal MaybeShapeOrRange As Variant, _
                     ByVal Space As Double _
                 ) As Rect
-    If VBA.IsEmpty(MaybeShapeOrRange) Then Exit Function
+    If VBA.IsEmpty(MaybeShapeOrRange) Then Exit Property
     ThrowIfNotShapeOrRange MaybeShapeOrRange
     Set SpaceBox = MaybeShapeOrRange.BoundingBox.GetCopy
     SpaceBox.Inflate Space, Space, Space, Space
-End Function
+End Property
 
 'возвращает Outline если или Empty
-Public Function TryGetOutline(ByVal Shape As Shape) As Variant
+Public Property Get TryGetOutline(ByVal Shape As Shape) As Variant
     If ShapeHasOutline(Shape) Then Set TryGetOutline = Shape.Outline
-End Function
+End Property
 
 '===============================================================================
 ' # функции манипуляций с объектами корела
@@ -1115,21 +1119,21 @@ Public Function AddProperEndingToPath(ByVal Path As String) As String
 End Function
 
 'существует ли файл или папка (папка должна заканчиваться на "\")
-Public Function FileExists(ByVal File As String) As Boolean
-    If File = "" Then Exit Function
+Public Property Get FileExists(ByVal File As String) As Boolean
+    If File = "" Then Exit Property
     FileExists = VBA.Len(VBA.Dir(File)) > 0
-End Function
+End Property
 
-Public Function FindFileInGMSFolders(ByVal FileName As String) As String
+Public Property Get FindFileInGMSFolders(ByVal FileName As String) As String
     FindFileInGMSFolders = GMSManager.UserGMSPath & FileName
     If Not FileExists(FindFileInGMSFolders) Then _
         FindFileInGMSFolders = GMSManager.GMSPath & FileName
     If Not FileExists(FindFileInGMSFolders) Then _
         FindFileInGMSFolders = ""
-End Function
+End Property
 
 'возвращает имя файла без расширения
-Public Function GetFileNameNoExt(ByVal FileName As String) As String
+Public Property Get GetFileNameNoExt(ByVal FileName As String) As String
     If VBA.Right(FileName, 1) <> "\" And VBA.Len(FileName) > 0 Then
         GetFileNameNoExt = Left(FileName, _
             Switch _
@@ -1138,99 +1142,37 @@ Public Function GetFileNameNoExt(ByVal FileName As String) As String
                 InStr(FileName, ".") > 0, _
                     InStrRev(FileName, ".") - 1))
     End If
-End Function
+End Property
 
 'полное имя временного файла
-Public Function GetTempFile() As String
+Public Property Get GetTempFile() As String
     GetTempFile = GetTempFolder & GetTempFileName
-End Function
+End Property
 
 'имя временного файла
-Public Function GetTempFileName() As String
+Public Property Get GetTempFileName() As String
     GetTempFileName = "elvin_" & CreateGUID & ".tmp"
-End Function
+End Property
 
 'находит временную папку
-Public Function GetTempFolder() As String
+Public Property Get GetTempFolder() As String
     GetTempFolder = AddProperEndingToPath(VBA.Environ$("TEMP"))
-    If FileExists(GetTempFolder) Then Exit Function
+    If FileExists(GetTempFolder) Then Exit Property
     GetTempFolder = AddProperEndingToPath(VBA.Environ$("TMP"))
-    If FileExists(GetTempFolder) Then Exit Function
+    If FileExists(GetTempFolder) Then Exit Property
     GetTempFolder = "c:\temp\"
-    If FileExists(GetTempFolder) Then Exit Function
+    If FileExists(GetTempFolder) Then Exit Property
     GetTempFolder = "c:\windows\temp\"
-    If FileExists(GetTempFolder) Then Exit Function
-End Function
+    If FileExists(GetTempFolder) Then Exit Property
+End Property
 
-'---------------------------------------------------------------------------------------
-' Procedure         : GetFileName
-' Author            : CARDA Consultants Inc.
-' Website           : http://www.cardaconsultants.com
-' Purpose           : Return the filename from a Path\filename input
-' Copyright         : The following may be altered and reused as you wish so long as the
-'                     copyright notice is left unchanged (including Author, Website and
-'                     Copyright).    It may not be sold/resold or reposted on other sites (links
-'                     back to this site are allowed).
-'
-' Input Variables:
-' ~~~~~~~~~~~~~~~~
-' sFile - string of a Path and filename (ie: "c:\temp\Test.xls")
-'
-' Revision History:
-' Rev               Date(yyyy/mm/dd)              Description
-' **************************************************************************************
-' 1                 2008-Feb-06                   Initial Release
-'---------------------------------------------------------------------------------------
-Public Function GetFileName(ByVal sFile As String)
-On Error GoTo Err_Handler
- 
-    GetFileName = Right(sFile, Len(sFile) - InStrRev(sFile, "\"))
- 
-Exit_Err_Handler:
-    Exit Function
- 
-Err_Handler:
-    MsgBox "The following error has occurred" & vbCrLf & vbCrLf & _
-           "Error Number: " & Err.Number & vbCrLf & _
-           "Error Source: GetFileName" & vbCrLf & _
-           "Error Description: " & Err.Description, vbCritical, "An Error has Occurred!"
-    GoTo Exit_Err_Handler
-End Function
+Public Property Get GetFileName(ByVal File As String) As String
+    GetFileName = VBA.Right(File, VBA.Len(File) - VBA.InStrRev(File, "\"))
+End Property
 
-'---------------------------------------------------------------------------------------
-' Procedure : GetFilePath
-' Author            : CARDA Consultants Inc.
-' Website           : http://www.cardaconsultants.com
-' Purpose           : Return the Path from a Path\filename input
-' Copyright         : The following may be altered and reused as you wish so long as the
-'                     copyright notice is left unchanged (including Author, Website and
-'                     Copyright).    It may not be sold/resold or reposted on other sites (links
-'                     back to this site are allowed).
-'
-' Input Variables:
-' ~~~~~~~~~~~~~~~~
-' sFile - string of a Path and filename (ie: "c:\temp\Test.xls")
-'
-' Revision History:
-' Rev               Date(yyyy/mm/dd)              Description
-' **************************************************************************************
-' 1                 2008-Feb-06                   Initial Release
-'---------------------------------------------------------------------------------------
-Public Function GetFilePath(ByVal sFile As String)
-On Error GoTo Err_Handler
- 
-    GetFilePath = Left(sFile, InStrRev(sFile, "\"))
- 
-Exit_Err_Handler:
-    Exit Function
- 
-Err_Handler:
-    MsgBox "The following error has occurred" & vbCrLf & vbCrLf & _
-           "Error Number: " & Err.Number & vbCrLf & _
-           "Error Source: GetFilePath" & vbCrLf & _
-           "Error Description: " & Err.Description, vbCritical, "An Error has Occurred!"
-    GoTo Exit_Err_Handler
-End Function
+Public Property Get GetFilePath(ByVal File As String) As String
+    GetFilePath = VBA.Left(File, VBA.InStrRev(File, "\"))
+End Property
 
 'создаёт папку, если не было
 'возвращает Path обратно (для inline-использования)
@@ -1369,6 +1311,14 @@ Public Function GetDictionaryCopy( _
     Next Key
 End Function
 
+Public Property Get Count(ByRef Arr As Variant) As Long
+    Count = UBound(Arr) - LBound(Arr) + 1
+End Property
+
+Public Property Get CountCopy(ByVal Arr As Variant) As Long
+    CountCopy = UBound(Arr) - LBound(Arr) + 1
+End Property
+
 'https://www.codegrepper.com/code-examples/vb/excel+vba+generate+guid+uuid
 Public Function CreateGUID( _
                     Optional ByVal Lowercase As Boolean, _
@@ -1390,28 +1340,7 @@ Public Function CreateGUID( _
     If Parens Then CreateGUID = "{" & CreateGUID & "}"
 End Function
 
-Public Function FindMaxValue(ByVal Collection As Collection) As Variant
-    Dim Item As Variant
-    For Each Item In Collection
-        If VBA.IsNumeric(Item) Then
-            If Item > FindMaxValue Then FindMaxValue = Item
-        End If
-    Next Item
-End Function
-
-Public Function FindMinValue(ByVal Collection As Collection) As Variant
-    Dim Item As Variant
-    For Each Item In Collection
-        If VBA.IsNumeric(Item) Then
-            If Item < FindMinValue Then
-                Debug.Print "aaa"
-                FindMinValue = Item
-            End If
-        End If
-    Next Item
-End Function
-
-Public Function FindMaxItemNum(ByRef Collection As Collection) As Long
+Public Property Get FindMaxItemNum(ByVal Collection As Collection) As Long
     FindMaxItemNum = 1
     Dim i As Long
     For i = 1 To Collection.Count
@@ -1420,9 +1349,9 @@ Public Function FindMaxItemNum(ByRef Collection As Collection) As Long
                 FindMaxItemNum = i
         End If
     Next i
-End Function
+End Property
 
-Public Function FindMinItemNum(ByRef Collection As Collection) As Long
+Public Property Get FindMinItemNum(ByVal Collection As Collection) As Long
     FindMinItemNum = 1
     Dim i As Long
     For i = 1 To Collection.Count
@@ -1431,58 +1360,43 @@ Public Function FindMinItemNum(ByRef Collection As Collection) As Long
                 FindMinItemNum = i
         End If
     Next i
-End Function
+End Property
 
 'является ли число чётным :) Что такое Even и Odd запоминать лень...
-Public Function IsChet(ByVal X As Variant) As Boolean
+Public Property Get IsChet(ByVal X As Variant) As Boolean
     If X Mod 2 = 0 Then IsChet = True Else IsChet = False
-End Function
+End Property
 
 'делится ли Number на Divider нацело
-Public Function IsDivider( _
+Public Property Get IsDivider( _
                     ByVal Number As Long, _
                     ByVal Divider As Long _
                 ) As Boolean
     If Number Mod Divider = 0 Then IsDivider = True Else IsDivider = False
-End Function
+End Property
 
-Public Function IsLowerCase(ByVal Str As String) As Boolean
+Public Property Get IsLowerCase(ByVal Str As String) As Boolean
     If VBA.LCase(Str) = Str Then IsLowerCase = True
-End Function
+End Property
 
-Public Function IsSame( _
-                    ByRef Value1 As Variant, _
-                    ByRef Value2 As Variant _
-                ) As Boolean
+Public Property Get IsSame( _
+                        ByRef Value1 As Variant, _
+                        ByRef Value2 As Variant _
+                    ) As Boolean
     If VBA.IsObject(Value1) And VBA.IsObject(Value2) Then
         IsSame = Value1 Is Value2
     ElseIf Not VBA.IsObject(Value1) And Not VBA.IsObject(Value2) Then
         IsSame = (Value1 = Value2)
     End If
-End Function
+End Property
 
-'функция отсюда: https://stackoverflow.com/questions/38267950/check-if-a-value-is-in-an-array-or-not-with-excel-vba
-Public Function IsStrInArr( _
-                    ByVal StringToBeFound As String, _
-                    Arr As Variant _
-                ) As Boolean
-        Dim i As Long
-        For i = LBound(Arr) To UBound(Arr)
-                If Arr(i) = StringToBeFound Then
-                        IsStrInArr = True
-                        Exit Function
-                End If
-        Next i
-        IsStrInArr = False
-End Function
-
-Public Function IsUpperCase(ByVal Str As String) As Boolean
+Public Property Get IsUpperCase(ByVal Str As String) As Boolean
     If VBA.UCase(Str) = Str Then IsUpperCase = True
-End Function
+End Property
 
 Public Sub RemoveElementFromCollection( _
-               ByVal Element As Variant, _
-               ByVal Collection As Collection _
+               ByVal Collection As Collection, _
+               ByVal Element As Variant _
            )
     If Collection.Count = 0 Then Exit Sub
     Dim i As Long
@@ -1494,26 +1408,83 @@ Public Sub RemoveElementFromCollection( _
     Next i
 End Sub
 
-Public Function MinOfTwo( _
-                    ByVal Value1 As Variant, _
-                    ByVal Value2 As Variant _
-                ) As Variant
-    If Value1 < Value2 Then MinOfTwo = Value1 Else MinOfTwo = Value2
-End Function
+Public Property Get Max(ByRef EnumerableSet As Variant) As Variant
+    Dim Item As Variant
+    For Each Item In EnumerableSet
+        If VBA.IsNumeric(Item) Then
+            If Item > Max Then Max = Item
+        End If
+    Next Item
+End Property
 
-Public Function MaxOfTwo( _
-                    ByVal Value1 As Variant, _
-                    ByVal Value2 As Variant _
-                ) As Variant
+Public Property Get MaxOfTwo( _
+                        ByVal Value1 As Variant, _
+                        ByVal Value2 As Variant _
+                    ) As Variant
     If Value1 > Value2 Then MaxOfTwo = Value1 Else MaxOfTwo = Value2
-End Function
+End Property
 
 Public Function MeasureStart()
     StartTime = Timer
 End Function
 Public Function MeasureFinish(Optional ByVal Message As String = "")
-    Debug.Print Message & CStr(Round(Timer - StartTime, 3)) & " секунд"
+    Debug.Print Message & VBA.CStr(Round(Timer - StartTime, 3)) & " секунд"
 End Function
+
+Public Property Get Min(ByRef EnumerableSet As Variant) As Variant
+    Dim Item As Variant
+    For Each Item In EnumerableSet
+        If VBA.IsNumeric(Item) Then
+            If Item < Min Then
+                Min = Item
+            End If
+        End If
+    Next Item
+End Property
+
+Public Property Get MinOfTwo( _
+                        ByVal Value1 As Variant, _
+                        ByVal Value2 As Variant _
+                    ) As Variant
+    If Value1 < Value2 Then MinOfTwo = Value1 Else MinOfTwo = Value2
+End Property
+
+Public Property Get Contains( _
+                        ByRef EnumerableSet As Variant, _
+                        ByRef Items As Variant _
+                    ) As Boolean
+    Dim Element As Variant
+    Dim Item As Variant
+    Dim ItemExists As Boolean
+    For Each Item In Items
+        For Each Element In EnumerableSet
+            If IsSame(Item, Element) Then
+                ItemExists = True
+                Exit For
+            End If
+        Next Element
+        If Not ItemExists Then Exit Property
+        ItemExists = False
+    Next Item
+    Contains = True
+End Property
+
+Public Property Get Pack(ParamArray Items() As Variant) As Variant()
+    Dim Length As Long
+    Length = UBound(Items) - LBound(Items) + 1
+    If Length = 0 Then
+        Pack = Array()
+        Exit Property
+    End If
+    ReDim Result(1 To Length) As Variant
+    Dim Index As Long
+    Dim Item As Variant
+    For Each Item In Items
+        Index = Index + 1
+        Assign Result(Index), Item
+    Next Item
+    Pack = Result
+End Property
 
 'создаёт ShapeRange из Shape/Shapes/ShapeRange
 Public Function PackShapes(ParamArray Shapes() As Variant) As ShapeRange
@@ -1532,13 +1503,17 @@ Public Function PackShapes(ParamArray Shapes() As Variant) As ShapeRange
     Next Item
 End Function
 
+Private Sub Resize(ByRef Arr As Variant, ByVal Length As Long)
+    ReDim Preserve Arr(LBound(Arr) To LBound(Arr) + Length - 1)
+End Sub
+
 'случайное целое от LowerBound до UpperBound
-Public Function RndInt( _
+Public Property Get RndInt( _
                     ByVal LowerBound As Long, _
                     ByVal UpperBound As Long _
                 ) As Long
-    RndInt = Int((UpperBound - LowerBound + 1) * Rnd + LowerBound)
-End Function
+    RndInt = VBA.Int((UpperBound - LowerBound + 1) * VBA.Rnd + LowerBound)
+End Property
 
 '===============================================================================
 ' # приватные функции модуля
@@ -1610,4 +1585,13 @@ Private Sub ThrowIfNotCollectionOrArray(ByRef CollectionOrArray As Variant)
     If VBA.IsArray(CollectionOrArray) Then Exit Sub
     VBA.Err.Raise 13, Source:="lib_elvin", _
                   Description:="Type mismatch: CollectionOrArray должен быть Collection или Array"
+End Sub
+
+'===============================================================================
+' # юнит-тесты модуля
+
+Private Sub TestContains()
+    Debug.Assert Contains(Array(1, 2, 3), Array(3, 1, 2)) = True
+    Debug.Assert Contains(Array(1, 2, 3), Array(3, 1, 4)) = False
+    Debug.Print "TestContains is OK"
 End Sub

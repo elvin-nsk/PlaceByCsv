@@ -1,7 +1,7 @@
 Attribute VB_Name = "PlaceByTable"
 '===============================================================================
 '   Макрос          : PlaceByTable
-'   Версия          : 2023.01.05
+'   Версия          : 2023.01.08
 '   Сайты           : https://vk.com/elvin_macro
 '                     https://github.com/elvin-nsk
 '   Автор           : elvin-nsk (me@elvin.nsk.ru)
@@ -20,6 +20,7 @@ Private Type tTargetLayers
     Layer2 As Layer
     Layer3 As Layer
     CropBoxLayer As Layer
+    BacksLayer As Layer
 End Type
 
 Private Const ImportExt As String = "cdr"
@@ -53,6 +54,7 @@ Sub Start()
         .SetSize .Shapes.All.SizeWidth + (Cfg.GroupsMinDistance * 2), _
                  .Shapes.All.SizeHeight + (Cfg.GroupsMinDistance * 2)
         ActiveLayer.Name = Cfg.DefaultLayerName
+        Set TargetLayers.BacksLayer = .CreateLayer(Cfg.BacksLayerName)
         Set TargetLayers.Layer1 = .CreateLayer(Cfg.Layer1Name)
         Set TargetLayers.Layer2 = .CreateLayer(Cfg.Layer2Name)
         Set TargetLayers.Layer3 = .CreateLayer(Cfg.Layer3Name)
@@ -195,7 +197,11 @@ Private Function ProcessPlace( _
         .Parse Cfg, Table
         
         ReplaceTextInTaggedShapes .ShapesByTags, Row, Table
-        TuneContentSize .Content, .CropBox, Cfg.ContentMaxSizeMultiplierToCropBox
+        If .IsFront Then
+            TuneContentSize .Content, .CropBox, Cfg.ContentMaxSizeMultiplierFace
+        Else
+            TuneContentSize .Content, .CropBox, Cfg.ContentMaxSizeMultiplierBack
+        End If
         
         Set ProcessPlace = .Self
     End With
@@ -361,6 +367,8 @@ Private Sub SpreadPlacesToLayers( _
         If Place.IsEmpty Then
             MoveToLayer Place.Shape, TargetLayers.CropBoxLayer
         Else
+            If Not Place.IsFront Then _
+                MoveToLayer Place.Shape, TargetLayers.BacksLayer
             Place.Shape.Ungroup
             MoveToLayer Place.ToLayer1, TargetLayers.Layer1
             MoveToLayer Place.ToLayer2, TargetLayers.Layer2

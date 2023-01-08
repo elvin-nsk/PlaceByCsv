@@ -24,8 +24,10 @@ Private Const iniFileName As String = "elvin_" & APP_NAME & ".ini"
 
 '===============================================================================
 
+Public BacksLayerName As String
 Public BackTag As String
-Public ContentMaxSizeMultiplierToCropBox As Double
+Public ContentMaxSizeMultiplierFace As Double
+Public ContentMaxSizeMultiplierBack As Double
 Public ContentTagsCommaSeparated As String
 Public CropBoxOutlineColor As String
 Public CsvFile As String
@@ -55,9 +57,12 @@ Private Sub Assign(ByVal Action As iniAction)
     
         iniFilePrepare .Self, Action
         
+        .KeyVar "BacksLayerName", BacksLayerName
         .KeyVar "BackTag", BackTag
-        .KeyVar "ContentMaxSizeMultiplierToCropBox", _
-            ContentMaxSizeMultiplierToCropBox
+        .KeyVar "ContentMaxSizeMultiplierFace", _
+            ContentMaxSizeMultiplierFace
+        .KeyVar "ContentMaxSizeMultiplierBack", _
+            ContentMaxSizeMultiplierBack
         .KeyVar "ContentTagsCommaSeparated", _
             ContentTagsCommaSeparated
         .KeyVar "CropBoxOutlineColor", CropBoxOutlineColor
